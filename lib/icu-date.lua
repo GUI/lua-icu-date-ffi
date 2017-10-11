@@ -1,7 +1,6 @@
-local inspect = require("inspect")
 local ffi = require("ffi")
 
-local icu_version_suffix = "_55"
+local icu_version_suffix = "_58"
 
 ffi.cdef([[
 void* malloc(size_t size);
@@ -224,6 +223,13 @@ typedef enum UCalendarDateFields {
   UCAL_FIELD_COUNT,
   UCAL_DAY_OF_MONTH=UCAL_DATE
 } UCalendarDateFields;
+typedef enum UCalendarAttribute {
+  UCAL_LENIENT,
+  UCAL_FIRST_DAY_OF_WEEK,
+  UCAL_MINIMAL_DAYS_IN_FIRST_WEEK,
+  UCAL_REPEATED_WALL_TIME,
+  UCAL_SKIPPED_WALL_TIME
+} UCalendarAttribute;
 
 int32_t u_strlen]] .. icu_version_suffix .. [[(const UChar* s);
 UChar* u_uastrcpy]] .. icu_version_suffix .. [[(UChar* dst, const char* src);
@@ -232,15 +238,19 @@ char* u_austrcpy]] .. icu_version_suffix .. [[(char* dst, const UChar* src);
 const char* u_errorName]] .. icu_version_suffix .. [[(UErrorCode code);
 
 UDateFormat* udat_open]] .. icu_version_suffix .. [[(UDateFormatStyle timeStyle, UDateFormatStyle dateStyle, const char* locale, const UChar* tzID, int32_t tzIDLength, const UChar* pattern, int32_t patternLength, UErrorCode* status);
+void udat_close]] .. icu_version_suffix .. [[(UDateFormat* format);
 void udat_parseCalendar]] .. icu_version_suffix .. [[(const UDateFormat* format, UCalendar* calendar, const UChar* text, int32_t textLength, int32_t* parsePos, UErrorCode* status);
 int32_t udat_formatCalendar]] .. icu_version_suffix .. [[(const UDateFormat* format, UCalendar* calendar, UChar* result, int32_t capacity, UFieldPosition* position, UErrorCode* status);
 
 UCalendar* ucal_open]] .. icu_version_suffix .. [[(const UChar* zoneID, int32_t len, const char* locale, UCalendarType type, UErrorCode* status);
+void ucal_close]] .. icu_version_suffix .. [[(UCalendar* cal);
 int32_t ucal_get]] .. icu_version_suffix .. [[(const UCalendar* cal, UCalendarDateFields field, UErrorCode* status);
 void ucal_set]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarDateFields field, int32_t value);
 void ucal_add]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarDateFields field, int32_t amount, UErrorCode* status);
 UDate ucal_getMillis]] .. icu_version_suffix .. [[(const UCalendar* cal, UErrorCode* status);
 void ucal_setMillis]] .. icu_version_suffix .. [[(UCalendar* cal, UDate dateTime, UErrorCode* status);
+int32_t ucal_getAttribute]] .. icu_version_suffix .. [[(const UCalendar* cal, UCalendarAttribute attr) ;
+void ucal_setAttribute]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarAttribute attr, int32_t newValue);
 ]])
 
 local icu = ffi.load("icui18n")
@@ -271,7 +281,7 @@ local function check_status(status, result)
   else
     local error_name = ffi.string(call_fn("u_errorName", status))
     if status >= icu.U_ERROR_WARNING_START and status < icu.U_ERROR_WARNING_LIMIT then
-      print("WARNING: " .. error_name)
+      -- print("WARNING: " .. error_name)
       return result
     else
       error("Invalid status: " .. error_name .. ": " .. result)
@@ -284,22 +294,18 @@ local function call_fn_check_status(name, ...)
   return check_status(status, result)
 end
 
-local function get_field(field_name)
-  return assert(icu["UCAL_" .. string.upper(field_name)])
-end
-
-function _M:get(field_name)
-  local field = get_field(field_name)
+function _M:get(field)
+  assert(field)
   return call_fn_check_status("ucal_get", self.cal, field, self.status_ptr)
 end
 
-function _M:set(field_name, value)
-  local field = get_field(field_name)
+function _M:set(field, value)
+  assert(field)
   return call_fn("ucal_set", self.cal, field, value)
 end
 
-function _M:add(field_name, amount)
-  local field = get_field(field_name)
+function _M:add(field, amount)
+  assert(field)
   return call_fn_check_status("ucal_add", self.cal, field, amount, self.status_ptr)
 end
 
@@ -309,6 +315,16 @@ end
 
 function _M:set_millis(value)
   call_fn_check_status("ucal_setMillis", self.cal, value, self.status_ptr)
+end
+
+function _M:get_attribute(attribute)
+  assert(attribute)
+  return call_fn("ucal_getAttribute", self.cal, attribute)
+end
+
+function _M:set_attribute(attribute, value)
+  assert(attribute)
+  return call_fn("ucal_setAttribute", self.cal, attribute, value)
 end
 
 local function string_to_uchar(str)
@@ -327,17 +343,22 @@ local function uchar_to_string(uchar)
   return ffi.string(str)
 end
 
-local function pattern_format(self, pattern)
+local function close_date_format(format)
+  call_fn("udat_close", format)
+end
+
+function _M:pattern_format(pattern)
   local pattern_uchar = string_to_uchar(pattern)
   local format = call_fn_check_status("udat_open", icu.UDAT_PATTERN, icu.UDAT_PATTERN, "en_US", nil, 0, pattern_uchar, -1, self.status_ptr)
+  ffi.gc(format, close_date_format)
 
   return format
 end
 
 function _M:format(pattern)
-  local format = pattern_format(self, pattern)
-  local result = nil
-  local result_length = 0
+  local format = pattern
+  local result_length = 64
+  local result = ffi.gc(ffi.C.malloc(result_length * uchar_size), ffi.C.free)
 
   local status, needed_length = call_fn_status("udat_formatCalendar", format, self.cal, result, result_length, nil, self.status_ptr)
   if status == icu.U_BUFFER_OVERFLOW_ERROR then
@@ -358,6 +379,10 @@ function _M:_parse(pattern, text)
   call_fn_check_status("udat_parseCalendar", format, self.cal, text_uchar, -1, position_ptr, self.status_ptr)
 end
 
+local function close_cal(cal)
+  call_fn("ucal_close", cal)
+end
+
 function _M.new(options)
   local zone_id
   local locale
@@ -376,11 +401,12 @@ function _M.new(options)
     calendar_type = icu.UCAL_GREGORIAN
   end
 
-  local zone_id = ffi.gc(ffi.C.malloc(1000), ffi.C.free)
-  call_fn("u_uastrcpy", zone_id, "America/Denver")
+  local zone_id = string_to_uchar("America/Denver")
+  -- local zone_id = string_to_uchar("UTC")
 
   local status_ptr = ffi.new(uerrorcode_type)
   local cal = call_fn_check_status("ucal_open", zone_id, -1, locale, calendar_type, status_ptr)
+  ffi.gc(cal, close_cal)
 
   local self = {
     cal = cal,
@@ -390,30 +416,47 @@ function _M.new(options)
   return setmetatable(self, _M)
 end
 
+_M._icu = icu
+
+_M.fields = {
+  ERA = icu.UCAL_ERA,
+  YEAR = icu.UCAL_YEAR,
+  MONTH = icu.UCAL_MONTH,
+  WEEK_OF_YEAR = icu.UCAL_WEEK_OF_YEAR,
+  WEEK_OF_MONTH = icu.UCAL_WEEK_OF_MONTH,
+  DATE = icu.UCAL_DATE,
+  DAY_OF_YEAR = icu.UCAL_DAY_OF_YEAR,
+  DAY_OF_WEEK = icu.UCAL_DAY_OF_WEEK,
+  DAY_OF_WEEK_IN_MONTH = icu.UCAL_DAY_OF_WEEK_IN_MONTH,
+  AM_PM = icu.UCAL_AM_PM,
+  HOUR = icu.UCAL_HOUR,
+  HOUR_OF_DAY = icu.UCAL_HOUR_OF_DAY,
+  MINUTE = icu.UCAL_MINUTE,
+  SECOND = icu.UCAL_SECOND,
+  MILLISECOND = icu.UCAL_MILLISECOND,
+  ZONE_OFFSET = icu.UCAL_ZONE_OFFSET,
+  DST_OFFSET = icu.UCAL_DST_OFFSET,
+  YEAR_WOY = icu.UCAL_YEAR_WOY,
+  DOW_LOCAL = icu.UCAL_DOW_LOCAL,
+  EXTENDED_YEAR = icu.UCAL_EXTENDED_YEAR,
+  JULIAN_DAY = icu.UCAL_JULIAN_DAY,
+  MILLISECONDS_IN_DAY = icu.UCAL_MILLISECONDS_IN_DAY,
+  IS_LEAP_MONTH = icu.UCAL_IS_LEAP_MONTH,
+  DAY_OF_MONTH = icu.UCAL_DAY_OF_MONTH,
+}
+
+_M.attributes = {
+  LENIENT = icu.UCAL_LENIENT,
+  FIRST_DAY_OF_WEEK = icu.UCAL_FIRST_DAY_OF_WEEK,
+  MINIMAL_DAYS_IN_FIRST_WEEK = icu.UCAL_MINIMAL_DAYS_IN_FIRST_WEEK,
+  REPEATED_WALL_TIME = icu.UCAL_REPEATED_WALL_TIME,
+  SKIPPED_WALL_TIME = icu.UCAL_SKIPPED_WALL_TIME,
+}
+
 function _M.parse(format, text, options)
   local instance = _M.new(options)
   instance:_parse(format, text)
   return instance
 end
 
-local test = _M.new()
-print(inspect(test:get_millis()))
-print(inspect(test:format("dd-MMM-yy h:mm:ss 'o''clock' a z")))
-test:set_millis(1501301001179)
-print(inspect(test:get_millis()))
-print(inspect(test:format("dd-MMM-yy h:mm:ss 'o''clock' a z")))
-
-local test2 = _M.parse("dd-MMM-yy h:mm:ss 'o''clock' a z", "31-Dec-04 2:20:47 o'clock AM PST")
-print("PARSED: " .. inspect(test2:get_millis()))
-print(inspect(test2:format("dd-MMM-yy h:mm:ss 'o''clock' a z")))
-test2:add("week_of_year", 1)
-print(inspect(test2:format("dd-MMM-yy h:mm:ss 'o''clock' a z")))
-test2:set("week_of_year", 9)
-print(inspect(test2:format("dd-MMM-yy h:mm:ss 'o''clock' a z")))
-print(inspect(test2:get("week_of_year")))
-print(inspect(test2:get("year")))
-print(inspect(test2:set("hour", 23)))
-print(inspect(test2:set("minute", 59)))
-print(inspect(test2:set("second", 59)))
-print(inspect(test2:format("dd-MMM-yy h:mm:ss 'o''clock' a z")))
 return _M
