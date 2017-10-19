@@ -2,7 +2,7 @@ describe("set", function()
   local icu_date = require "icu-date"
   local fields = icu_date.fields
   local date = icu_date.new()
-  local format = date:pattern_format("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
+  local format = icu_date.pattern_format("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
 
   before_each(function()
     date:set_millis(1507836727123)

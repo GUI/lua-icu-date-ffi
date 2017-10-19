@@ -2,7 +2,7 @@ describe("get", function()
   local icu_date = require "icu-date"
   local fields = icu_date.fields
   local date = icu_date.new()
-  local format = date:pattern_format("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
+  local format = date.pattern_format("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
 
   before_each(function()
     date = icu_date.new()
