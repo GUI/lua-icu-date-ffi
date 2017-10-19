@@ -1,11 +1,13 @@
 describe("get", function()
   local icu_date = require "icu-date"
   local fields = icu_date.fields
-  local date
+  local date = icu_date.new()
+  local format = date:pattern_format("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
 
   before_each(function()
     date = icu_date.new()
-    date:set_millis(1507771927123)
+    date:set_millis(1507836727123)
+    assert.equal("2017-10-12T19:32:07.123Z", date:format(format))
   end)
 
   it("gets era", function()
@@ -29,15 +31,15 @@ describe("get", function()
   end)
 
   it("gets date", function()
-    assert.equal(11, date:get(fields.DATE))
+    assert.equal(12, date:get(fields.DATE))
   end)
 
   it("gets day of year", function()
-    assert.equal(284, date:get(fields.DAY_OF_YEAR))
+    assert.equal(285, date:get(fields.DAY_OF_YEAR))
   end)
 
   it("gets day of week", function()
-    assert.equal(4, date:get(fields.DAY_OF_WEEK))
+    assert.equal(5, date:get(fields.DAY_OF_WEEK))
   end)
 
   it("gets day of week in month", function()
@@ -69,11 +71,11 @@ describe("get", function()
   end)
 
   it("gets zone offset", function()
-    assert.equal(-25200000, date:get(fields.ZONE_OFFSET))
+    assert.equal(0, date:get(fields.ZONE_OFFSET))
   end)
 
   it("gets dst offset", function()
-    assert.equal(3600000, date:get(fields.DST_OFFSET))
+    assert.equal(0, date:get(fields.DST_OFFSET))
   end)
 
   it("gets year woy", function()
@@ -81,7 +83,7 @@ describe("get", function()
   end)
 
   it("gets dow local", function()
-    assert.equal(4, date:get(fields.DOW_LOCAL))
+    assert.equal(5, date:get(fields.DOW_LOCAL))
   end)
 
   it("gets extended year", function()
@@ -89,7 +91,7 @@ describe("get", function()
   end)
 
   it("gets julian day", function()
-    assert.equal(2458038, date:get(fields.JULIAN_DAY))
+    assert.equal(2458039, date:get(fields.JULIAN_DAY))
   end)
 
   it("gets milliseconds in day", function()
@@ -101,6 +103,6 @@ describe("get", function()
   end)
 
   it("gets day of month", function()
-    assert.equal(11, date:get(fields.DAY_OF_MONTH))
+    assert.equal(12, date:get(fields.DAY_OF_MONTH))
   end)
 end)

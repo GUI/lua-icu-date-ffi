@@ -18,5 +18,7 @@ build = {
   type = "builtin",
   modules = {
     ["icu-date"] = "lib/icu-date.lua",
+    ["icu-date.detect_icu_version_suffix"] = "lib/icu-date/detect_icu_version_suffix.lua",
+    ["icu-date.ffi_cdef"] = "lib/icu-date/ffi_cdef.lua",
   },
 }
