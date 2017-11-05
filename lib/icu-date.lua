@@ -45,39 +45,6 @@ local function call_fn_check_status(name, ...)
   return check_status(status, result)
 end
 
-function _M:get(field)
-  assert(field)
-  return call_fn_check_status("ucal_get", self.cal, field, self.status_ptr)
-end
-
-function _M:set(field, value)
-  assert(field)
-  return call_fn("ucal_set", self.cal, field, value)
-end
-
-function _M:add(field, amount)
-  assert(field)
-  return call_fn_check_status("ucal_add", self.cal, field, amount, self.status_ptr)
-end
-
-function _M:get_millis()
-  return call_fn_check_status("ucal_getMillis", self.cal, self.status_ptr)
-end
-
-function _M:set_millis(value)
-  call_fn_check_status("ucal_setMillis", self.cal, value, self.status_ptr)
-end
-
-function _M:get_attribute(attribute)
-  assert(attribute)
-  return call_fn("ucal_getAttribute", self.cal, attribute)
-end
-
-function _M:set_attribute(attribute, value)
-  assert(attribute)
-  return call_fn("ucal_setAttribute", self.cal, attribute, value)
-end
-
 local function string_to_uchar(str)
   local length = string.len(str) + 1
   local size = length * uchar_size
@@ -94,21 +61,71 @@ local function uchar_to_string(uchar)
   return ffi.string(str)
 end
 
-local function close_date_format(format)
-  call_fn("udat_close", format)
+function _M:get(field)
+  assert(field)
+  return call_fn_check_status("ucal_get", self.cal, field, self.status_ptr)
 end
 
-function _M.pattern_format(pattern)
-  local pattern_uchar = string_to_uchar(pattern)
-  local status_ptr = ffi.new(uerrorcode_type)
-  local format = call_fn_check_status("udat_open", icu.UDAT_PATTERN, icu.UDAT_PATTERN, "en_US", nil, 0, pattern_uchar, -1, status_ptr)
-  ffi.gc(format, close_date_format)
-
-  return format
+function _M:set(field, value)
+  assert(field)
+  return call_fn("ucal_set", self.cal, field, value)
 end
 
-function _M:format(pattern)
-  local format = pattern
+function _M:add(field, amount)
+  assert(field)
+  return call_fn_check_status("ucal_add", self.cal, field, amount, self.status_ptr)
+end
+
+function _M:clear()
+  return call_fn("ucal_clear", self.cal)
+end
+
+function _M:clear_field(field)
+  assert(field)
+  return call_fn("ucal_clear", self.cal, field)
+end
+
+function _M:get_millis()
+  return call_fn_check_status("ucal_getMillis", self.cal, self.status_ptr)
+end
+
+function _M:set_millis(value)
+  return call_fn_check_status("ucal_setMillis", self.cal, value, self.status_ptr)
+end
+
+function _M:get_attribute(attribute)
+  assert(attribute)
+  return call_fn("ucal_getAttribute", self.cal, attribute)
+end
+
+function _M:set_attribute(attribute, value)
+  assert(attribute)
+  return call_fn("ucal_setAttribute", self.cal, attribute, value)
+end
+
+function _M:get_time_zone_id()
+  local result_length = 64
+  local result = ffi.gc(ffi.C.malloc(result_length * uchar_size), ffi.C.free)
+
+  local status, needed_length = call_fn_status("ucal_getTimeZoneID", self.cal, result, result_length, self.status_ptr)
+  if status == icu.U_BUFFER_OVERFLOW_ERROR then
+    result_length = needed_length + 1
+    result = ffi.gc(ffi.C.malloc(result_length * uchar_size), ffi.C.free)
+    call_fn_status("ucal_getTimeZoneID", self.cal, result, result_length, self.status_ptr)
+  else
+    check_status(status)
+  end
+
+  return uchar_to_string(result)
+end
+
+function _M:set_time_zone_id(zone_id)
+  assert(zone_id)
+  zone_id = string_to_uchar(zone_id)
+  return call_fn_check_status("ucal_setTimeZone", self.cal, zone_id, -1, self.status_ptr)
+end
+
+function _M:format(format)
   local result_length = 64
   local result = ffi.gc(ffi.C.malloc(result_length * uchar_size), ffi.C.free)
 
@@ -124,8 +141,11 @@ function _M:format(pattern)
   return uchar_to_string(result)
 end
 
-function _M:_parse(pattern, text)
-  local format = pattern_format(self, pattern)
+function _M:parse(format, text, options)
+  if not options or options["clear"] ~= false then
+    _M.clear(self)
+  end
+
   local text_uchar = string_to_uchar(text)
   local position_ptr = ffi.new("int32_t[1]")
   call_fn_check_status("udat_parseCalendar", format, self.cal, text_uchar, -1, position_ptr, self.status_ptr)
@@ -155,7 +175,7 @@ function _M.new(options)
   end
 
   if not calendar_type then
-    calendar_type = icu.UCAL_GREGORIAN
+    calendar_type = _M.calendar_types.GREGORIAN
   end
 
   local status_ptr = ffi.new(uerrorcode_type)
@@ -170,7 +190,37 @@ function _M.new(options)
   return setmetatable(self, _M)
 end
 
+_M.formats = {}
+local format_cache = {}
+
+local function close_date_format(format)
+  call_fn("udat_close", format)
+end
+
+function _M.formats.pattern(pattern)
+  if format_cache[pattern] then
+    return format_cache[pattern]
+  end
+
+  local pattern_uchar = string_to_uchar(pattern)
+  local status_ptr = ffi.new(uerrorcode_type)
+  local format = call_fn_check_status("udat_open", icu.UDAT_PATTERN, icu.UDAT_PATTERN, "en_US", nil, 0, pattern_uchar, -1, status_ptr)
+  ffi.gc(format, close_date_format)
+
+  format_cache[pattern] = format
+  return format
+end
+
+function _M.formats.iso8601()
+  return _M.formats.pattern("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
+end
+
 _M._icu = icu
+
+_M.calendar_types = {
+  DEFAULT = icu.UCAL_DEFAULT,
+  GREGORIAN = icu.UCAL_GREGORIAN,
+}
 
 _M.fields = {
   ERA = icu.UCAL_ERA,
@@ -206,11 +256,5 @@ _M.attributes = {
   REPEATED_WALL_TIME = icu.UCAL_REPEATED_WALL_TIME,
   SKIPPED_WALL_TIME = icu.UCAL_SKIPPED_WALL_TIME,
 }
-
-function _M.parse(format, text, options)
-  local instance = _M.new(options)
-  instance:_parse(format, text)
-  return instance
-end
 
 return _M

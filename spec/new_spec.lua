@@ -1,6 +1,6 @@
 describe("new", function()
   local icu_date = require "icu-date"
-  local format = icu_date.pattern_format("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
+  local format = icu_date.formats.iso8601()
 
   it("creates new instance", function()
     local date = icu_date.new()

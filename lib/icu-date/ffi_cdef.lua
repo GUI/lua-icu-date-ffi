@@ -244,9 +244,13 @@ return function(ffi, icu_version_suffix)
   int32_t ucal_get]] .. icu_version_suffix .. [[(const UCalendar* cal, UCalendarDateFields field, UErrorCode* status);
   void ucal_set]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarDateFields field, int32_t value);
   void ucal_add]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarDateFields field, int32_t amount, UErrorCode* status);
+  void ucal_clear]] .. icu_version_suffix .. [[(UCalendar* cal);
+  void ucal_clearField]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarDateFields field);
   UDate ucal_getMillis]] .. icu_version_suffix .. [[(const UCalendar* cal, UErrorCode* status);
   void ucal_setMillis]] .. icu_version_suffix .. [[(UCalendar* cal, UDate dateTime, UErrorCode* status);
   int32_t ucal_getAttribute]] .. icu_version_suffix .. [[(const UCalendar* cal, UCalendarAttribute attr) ;
   void ucal_setAttribute]] .. icu_version_suffix .. [[(UCalendar* cal, UCalendarAttribute attr, int32_t newValue);
+  int32_t ucal_getTimeZoneID]] .. icu_version_suffix .. [[(const UCalendar* cal, UChar* result, int32_t resultLength, UErrorCode* status) ;
+  void ucal_setTimeZone]] .. icu_version_suffix .. [[(UCalendar* cal, const UChar* zoneID, int32_t len, UErrorCode* status);
   ]])
 end
