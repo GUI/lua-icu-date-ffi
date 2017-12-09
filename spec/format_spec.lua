@@ -12,7 +12,7 @@ describe("format", function()
   end)
 
   it("custom pattern format", function()
-    local format = icu_date.formats.pattern("YYYY-MM-dd")
+    local format = icu_date.formats.pattern("yyyy-MM-dd")
     assert.equal("2017-10-12", date:format(format))
   end)
 end)

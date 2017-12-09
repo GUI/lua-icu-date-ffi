@@ -27,11 +27,11 @@ local format_iso8601 = icu_date.formats.iso8601()
 date:format(format_iso8601) -- "2017-10-12T19:32:07.123Z"
 
 -- You can generate a custom formatted string.
-local format_custom = icu_date.formats.pattern("EEE, MMM d, YYYY h:mma zzz")
+local format_custom = icu_date.formats.pattern("EEE, MMM d, yyyy h:mma zzz")
 date:format(format_custom) -- "Thu, Oct 12, 2017 7:32PM GMT"
 
 -- You can parse a string using various formats.
-local format_date = icu_date.formats.pattern("YYYY-MM-dd")
+local format_date = icu_date.formats.pattern("yyyy-MM-dd")
 date:parse(format_date, "2016-09-18")
 date:format(format_iso8601) -- "2016-09-18T00:00:00.000Z"
 
@@ -97,7 +97,7 @@ The `options` table accepts the following fields:
 
 **syntax:** `format = icu_date.formats.iso8601()`
 
-A shortcut for `icu_date.formats.pattern("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")`.
+A shortcut for `icu_date.formats.pattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ")`.
 
 ### date:get
 

@@ -35,7 +35,7 @@ local function check_status(status, result)
       -- print("WARNING: " .. error_name)
       return result
     else
-      error("Invalid status: " .. error_name .. ": " .. result)
+      error("Invalid status: " .. (tostring(error_name) or "") .. ". Result: " .. (tostring(result) or ""))
     end
   end
 end
@@ -212,7 +212,7 @@ function _M.formats.pattern(pattern)
 end
 
 function _M.formats.iso8601()
-  return _M.formats.pattern("YYYY-MM-dd'T'HH:mm:ss.SSSZZZZZ")
+  return _M.formats.pattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ")
 end
 
 _M._icu = icu
