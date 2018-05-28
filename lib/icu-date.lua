@@ -2,9 +2,14 @@ local ffi = require "ffi"
 local detect_icu_version_suffix = require "icu-date.detect_icu_version_suffix"
 local icu_ffi_cdef = require "icu-date.ffi_cdef"
 
-local icu_version_suffix = detect_icu_version_suffix()
+local icu_version_suffix, fullpath = detect_icu_version_suffix()
 icu_ffi_cdef(ffi, icu_version_suffix)
-local icu = ffi.load("icui18n")
+local icu
+if fullpath ~= nil then
+    icu = ffi.load(fullpath)
+else
+    icu = ffi.load("icui18n")
+end
 
 local uerrorcode_type = ffi.typeof("UErrorCode[1]")
 local uchar_size = ffi.sizeof("UChar")

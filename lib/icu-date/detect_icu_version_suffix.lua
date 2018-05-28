@@ -1,5 +1,14 @@
 local ffi = require "ffi"
 
+if ffi.os == 'OSX' then
+  ffi.cdef[[
+    uint32_t _dyld_image_count();
+    const char* _dyld_get_image_name(uint32_t image_index);
+  ]]
+end
+
+
+
 -- libicu appends its function names with a version suffix in some
 -- environments. Try to detect it.
 --
@@ -13,6 +22,17 @@ return function()
   local detected_suffix = os.getenv("ICU_VERSION_SUFFIX")
   if detected_suffix then
     return detected_suffix
+  end
+
+  for i = 0, ffi.C._dyld_image_count()-1 do
+      local path = ffi.C._dyld_get_image_name(i)
+
+      if path ~= nil then
+          local _, _, prefix = ffi.string(path):find('^.*libicui18n%.(%d%d)%.dylib')
+          if prefix ~= nil then
+              return '_'..prefix, ffi.string(path)
+          end
+      end
   end
 
   -- Some systems, like OS X don't have a suffix.
