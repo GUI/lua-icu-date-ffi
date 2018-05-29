@@ -2,7 +2,7 @@ package = "icu-date"
 version = "scm-1"
 
 source = {
-    url = "git://github.com/tarantool/lua-icu-date.git",
+    url = "git://github.com/tarantool/icu-date.git",
     branch = 'master',
 }
 
@@ -20,7 +20,7 @@ description = {
         - leap years
         - ISO 8601 formatting and parsing
     ]],
-    homepage = "https://github.com/tarantool/lua-icu-date",
+    homepage = "https://github.com/tarantool/icu-date",
     license = "MIT",
 }
 
