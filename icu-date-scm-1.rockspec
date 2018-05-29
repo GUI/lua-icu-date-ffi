@@ -2,7 +2,7 @@ package = "icu-date"
 version = "scm-1"
 
 source = {
-    url = "git@github.com:tarantool/lua-icu-date.git",
+    url = "git@github.com/tarantool/lua-icu-date.git",
     branch = 'master',
 }
 
