@@ -31,8 +31,8 @@ dependencies = {
 build = {
     type = "builtin",
     modules = {
-        ["icu-date"] = "icu-date.lua",
-        ["utils.detect_icu_version_suffix"] = "utils/detect_icu_version_suffix.lua",
-        ["utils.ffi_cdef"] = "utils/ffi_cdef.lua",
+        ["icu-date.init"] = "icu-date.lua",
+        ["icu-date.detect_icu_version_suffix"] = "icu-date/detect_icu_version_suffix.lua",
+        ["icu-date.ffi_cdef"] = "icu-date/ffi_cdef.lua",
     },
 }
