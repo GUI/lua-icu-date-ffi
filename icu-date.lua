@@ -1,6 +1,3 @@
-#!/usr/bin/env tarantool
-require('strict').on()
-
 local ffi = require("ffi")
 local detect_icu_version_suffix = require("icu-date.detect_icu_version_suffix")
 local icu_ffi_cdef = require("icu-date.ffi_cdef")
