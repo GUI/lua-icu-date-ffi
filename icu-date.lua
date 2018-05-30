@@ -134,6 +134,7 @@ function _M:set_time_zone_id(zone_id)
 end
 
 function _M:format(format)
+  assert(format)
   local result_length = 64
   local result = ffi.gc(ffi.C.malloc(result_length * uchar_size), ffi.C.free)
 
@@ -150,6 +151,7 @@ function _M:format(format)
 end
 
 function _M:parse(format, text, options)
+  assert(format)
   if not options or options["clear"] ~= false then
     _M.clear(self)
   end
