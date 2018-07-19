@@ -1,23 +1,5 @@
 local ffi = require "ffi"
 
-if ffi.os == 'OSX' then
-  ffi.cdef[[
-    uint32_t _dyld_image_count();
-    const char* _dyld_get_image_name(uint32_t image_index);
-  ]]
-elseif ffi.os == 'Linux' or ffi.os == 'BSD' then
-  ffi.cdef[[
-    struct dl_phdr_info {
-      void*             dlpi_addr;  /* Base address of object */
-      const char       *dlpi_name;  /* (Null-terminated) name of object */
-    };
-    typedef int (*enum_callback) (struct dl_phdr_info *info, size_t size, void *data);
-    int dl_iterate_phdr(enum_callback callback, void *data);
-  ]]
-end
-
-
-
 -- libicu appends its function names with a version suffix in some
 -- environments. Try to detect it.
 --
@@ -32,40 +14,6 @@ return function()
   if detected_suffix then
     return detected_suffix
   end
-
-  if ffi.os == 'OSX' then
-      for i = 0, ffi.C._dyld_image_count()-1 do
-          local path = ffi.C._dyld_get_image_name(i)
-
-          if path ~= nil then
-              local _, _, prefix = ffi.string(path):find('^.*libicui18n%.(%d%d)%.dylib')
-              if prefix ~= nil then
-                  return '_'..prefix, ffi.string(path)
-              end
-          end
-      end
-  elseif ffi.os == 'Linux' or ffi.os == 'BSD' then
-      local found, found_path
-      local cb = ffi.cast('enum_callback', function(info, size, data)
-                              if info ~= nil and info['dlpi_name'] ~= nil then
-                                  local path = ffi.string(info['dlpi_name'])
-                                  local _, _, prefix = path:find('^.*libicui18n%.so%.(%d%d)')
-                                  if prefix ~= nil then
-                                      found = '_'..prefix
-                                      found_path = path
-                                      return 1
-                                  end
-                              end
-                              return 0
-      end)
-      local _ = ffi.C.dl_iterate_phdr(cb, nil)
-      cb:free()
-
-      if found ~= nil and found_path ~= nil then
-          return found, found_path
-      end
-  end
-
 
   -- Some systems, like OS X don't have a suffix.
   local possible_suffixes = {""}
@@ -91,11 +39,10 @@ return function()
     cdef = cdef .. "\nint32_t u_strlen" .. suffix .. "(const UChar* s);"
   end
   ffi.cdef(cdef)
-  local icu_version = ffi.load("icui18n")
 
   -- Check each function name to see if it exists.
   local function check_suffix(suffix)
-    assert(icu_version["u_strlen" .. suffix])
+    assert(ffi.C["u_strlen" .. suffix])
   end
   for _, suffix in ipairs(possible_suffixes) do
     local exists = pcall(check_suffix, suffix)
