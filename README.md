@@ -16,7 +16,7 @@ LuaJIT FFI bindings to [ICU (International Components for Unicode)](http://site.
 local icu_date = require "icu-date"
 
 -- Create a new date object.
-local date = icu_date:new()
+local date = icu_date.new()
 
 -- You can get and set the date's timestamp.
 date:get_millis() -- Defaults to current time.
