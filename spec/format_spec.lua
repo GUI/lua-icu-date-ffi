@@ -1,5 +1,5 @@
 describe("format", function()
-  local icu_date = require "icu-date"
+  local icu_date = require "icu-date-ffi"
   local date = icu_date.new()
 
   before_each(function()

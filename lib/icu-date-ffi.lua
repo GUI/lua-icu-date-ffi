@@ -1,6 +1,6 @@
 local ffi = require "ffi"
-local detect_icu_version_suffix = require "icu-date.detect_icu_version_suffix"
-local icu_ffi_cdef = require "icu-date.ffi_cdef"
+local detect_icu_version_suffix = require "icu-date-ffi.detect_icu_version_suffix"
+local icu_ffi_cdef = require "icu-date-ffi.ffi_cdef"
 
 local icu_version_suffix = detect_icu_version_suffix()
 icu_ffi_cdef(ffi, icu_version_suffix)

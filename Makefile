@@ -1,5 +1,5 @@
 .PHONY: test
 
 test:
-	luarocks make --local icu-date-git-1.rockspec
+	luarocks make --local icu-date-ffi-git-1.rockspec
 	busted spec

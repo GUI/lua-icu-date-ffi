@@ -1,5 +1,5 @@
 describe("parse", function()
-  local icu_date = require "icu-date"
+  local icu_date = require "icu-date-ffi"
   local date
 
   before_each(function()

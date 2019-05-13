@@ -1,4 +1,4 @@
-# lua-icu-date
+# lua-icu-date-ffi
 
 LuaJIT FFI bindings to [ICU (International Components for Unicode)](http://site.icu-project.org). ICU provides a robust date and time library that correctly and efficiently handles complexities of dealing with dates and times:
 
@@ -13,7 +13,7 @@ LuaJIT FFI bindings to [ICU (International Components for Unicode)](http://site.
 ## Usage
 
 ```lua
-local icu_date = require "icu-date"
+local icu_date = require "icu-date-ffi"
 
 -- Create a new date object.
 local date = icu_date:new()

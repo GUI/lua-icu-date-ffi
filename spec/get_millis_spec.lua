@@ -1,5 +1,5 @@
 describe("get_millis", function()
-  local icu_date = require "icu-date"
+  local icu_date = require "icu-date-ffi"
   local attributes = icu_date.attributes
   local date = icu_date.new()
   local format = icu_date.formats.iso8601()

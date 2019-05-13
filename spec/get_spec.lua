@@ -1,5 +1,5 @@
 describe("get", function()
-  local icu_date = require "icu-date"
+  local icu_date = require "icu-date-ffi"
   local fields = icu_date.fields
   local date = icu_date.new()
   local format = date.formats.iso8601()

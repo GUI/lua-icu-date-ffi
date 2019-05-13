@@ -1,5 +1,5 @@
 describe("new", function()
-  local icu_date = require "icu-date"
+  local icu_date = require "icu-date-ffi"
   local format = icu_date.formats.iso8601()
 
   it("creates new instance", function()
